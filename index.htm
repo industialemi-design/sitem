@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALEMI - Gestión de Negocios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F8F8;
+            color: #333;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #f97316;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #fb923c;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+    <!-- Mobile Header -->
+    <div id="mobile-header" class="md:hidden bg-orange-600 text-white p-4 flex justify-between items-center fixed top-0 left-0 right-0 z-50 shadow-lg">
+        <h1 class="text-2xl font-bold">ALEMI</h1>
+        <button id="mobile-menu-btn" class="text-2xl"><i class="fas fa-bars"></i></button>
+    </div>
+
+    <!-- Main Content Wrapper -->
+    <div class="flex flex-1 flex-col md:flex-row overflow-hidden mt-16 md:mt-0">
+
+        <!-- Sidebar de Navegación -->
+        <aside id="sidebar" class="hidden md:flex absolute md:relative top-0 right-0 w-64 h-full bg-orange-600 text-white p-4 flex flex-col items-center shadow-lg overflow-y-auto custom-scrollbar z-50 md:z-auto md:flex-shrink-0">
+            <button id="close-mobile-menu" class="md:hidden self-end text-white text-2xl mb-4"><i class="fas fa-times"></i></button>
+            <h1 class="text-2xl font-bold mb-6 text-center">ALEMI</h1>
+            <nav class="w-full">
+                <ul class="space-y-2">
+                    <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200 active-nav" data-section="dashboard"><i class="fas fa-home mr-3"></i>Resumen</button></li>
+                    <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200" data-section="sales"><i class="fas fa-cash-register mr-3"></i>Ventas</button></li>
+                    <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200" data-section="orders"><i class="fas fa-clipboard-list mr-3"></i>Pedidos</button></li>
+                    <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200" data-section="history-sales"><i class="fas fa-history mr-3"></i>Historial de Ventas</button></li>
+                    <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200" data-section="history-orders"><i class="fas fa-truck mr-3"></i>Historial de Pedidos</button></li>
+                    <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200" data-section="products"><i class="fas fa-box-open mr-3"></i>Productos</button></li>
+                    <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200" data-section="clients"><i class="fas fa-users mr-3"></i>Clientes</button></li>
+                    <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200" data-section="settings"><i class="fas fa-cogs mr-3"></i>Configuración</button></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
+            <!-- Dashboard / Resumen y Análisis -->
+            <section id="dashboard" class="space-y-6 fade-in">
+                <h2 class="text-3xl font-bold text-orange-600 mb-6">Resumen y Análisis</h2>
+                
+                <!-- Cards de Métricas -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-orange-500">
+                        <div class="flex items-center justify-between">
+                            <span class="text-lg font-semibold text-gray-500">Ventas Hoy</span>
+                            <i class="fas fa-chart-line text-orange-500 text-2xl"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-800 mt-2" id="sales-today-amount">Bs.0.00</div>
+                        <div class="text-sm text-gray-400" id="sales-today-count">0 ventas</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-orange-500">
+                        <div class="flex items-center justify-between">
+                            <span class="text-lg font-semibold text-gray-500">Ventas Mes</span>
+                            <i class="fas fa-calendar-alt text-orange-500 text-2xl"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-800 mt-2" id="sales-month-amount">Bs.0.00</div>
+                        <div class="text-sm text-gray-400" id="sales-month-count">0 ventas</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-orange-500">
+                        <div class="flex items-center justify-between">
+                            <span class="text-lg font-semibold text-gray-500">Total Clientes</span>
+                            <i class="fas fa-users text-orange-500 text-2xl"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-800 mt-2" id="total-clients">0</div>
+                    </div>
+                </div>
+
+                <!-- Sección de Análisis Detallado -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Análisis de Datos</h3>
+                    <button id="generate-analysis-btn" class="bg-orange-500 text-white px-6 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200">Generar Análisis</button>
+                    <div id="analysis-results" class="hidden mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p class="font-bold">Total de Ventas: <span class="font-normal" id="analysis-total-sales"></span></p>
+                        <p class="font-bold">Total de Deuda: <span class="font-normal" id="analysis-pending-sales"></span></p>
+                        <p class="font-bold">Ticket Promedio: <span class="font-normal" id="analysis-average-ticket"></span></p>
+                        <p class="font-bold">Top Producto: <span class="font-normal" id="analysis-top-product"></span></p>
+                        <p class="font-bold">Top Cliente: <span class="font-normal" id="analysis-top-client"></span></p>
+                        <button id="close-analysis-btn" class="mt-4 bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200">Cerrar</button>
+                    </div>
+                </div>
+                
+                <!-- Sección de Exportación -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Exportar Datos de Ventas</h3>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <label class="font-semibold text-gray-600">Desde:</label>
+                        <input type="date" id="export-start-date" class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <label class="font-semibold text-gray-600">Hasta:</label>
+                        <input type="date" id="export-end-date" class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <button id="preview-export-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200">Previsualizar</button>
+                        <button id="export-txt-btn" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-file-alt mr-2"></i>TXT</button>
+                        <button id="export-csv-btn" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-file-csv mr-2"></i>CSV</button>
+                        <button id="export-xlsx-btn" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-file-excel mr-2"></i>XLSX</button>
+                        <button id="export-pdf-btn" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-file-pdf mr-2"></i>PDF</button>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- Ventas (Registro de Ventas) -->
+            <section id="sales" class="hidden space-y-6 fade-in">
+                <h2 class="text-3xl font-bold text-orange-600 mb-6">Registro de Ventas</h2>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Nueva Venta</h3>
+                    <form id="sale-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Producto y Tamaño -->
+                            <div>
+                                <label for="sale-product" class="block text-gray-700 font-semibold mb-1">Producto</label>
+                                <input type="text" id="sale-product" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer" placeholder="Seleccionar producto" readonly>
+                            </div>
+                            <div>
+                                <label for="sale-size" class="block text-gray-700 font-semibold mb-1">Tamaño</label>
+                                <input type="text" id="sale-size" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer" placeholder="Seleccionar tamaño" readonly disabled>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Sabor y Cantidad -->
+                            <div>
+                                <label for="sale-flavor" class="block text-gray-700 font-semibold mb-1">Sabor</label>
+                                <input type="text" id="sale-flavor" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer" placeholder="Seleccionar sabor" readonly disabled>
+                            </div>
+                            <div>
+                                <label for="sale-quantity" class="block text-gray-700 font-semibold mb-1">Cantidad</label>
+                                <div class="flex items-center border rounded-md">
+                                    <button type="button" class="p-2 text-gray-500 hover:text-orange-500" id="sale-quantity-minus"><i class="fas fa-minus"></i></button>
+                                    <input type="number" id="sale-quantity" class="w-full text-center px-2 py-2 focus:outline-none" value="1" min="1">
+                                    <button type="button" class="p-2 text-gray-500 hover:text-orange-500" id="sale-quantity-plus"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Cliente y Precio Especial -->
+                            <div>
+                                <label for="sale-client" class="block text-gray-700 font-semibold mb-1">Cliente (Opcional)</label>
+                                <input type="text" id="sale-client" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer" placeholder="Seleccionar cliente" readonly>
+                            </div>
+                            <div>
+                                <label for="sale-price" class="block text-gray-700 font-semibold mb-1">Precio</label>
+                                <div class="flex items-center">
+                                    <input type="number" id="sale-price" class="w-full px-3 py-2 border rounded-md bg-gray-100 cursor-not-allowed" disabled>
+                                    <label class="flex items-center ml-2 text-sm text-gray-600">
+                                        <input type="checkbox" id="sale-special-price-toggle" class="mr-1"> Precio Especial
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="sale-notes" class="block text-gray-700 font-semibold mb-1">Notas (Opcional)</label>
+                            <textarea id="sale-notes" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-plus mr-2"></i>Agregar Item</button>
+                    </form>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Items de Venta</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tamaño</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sabor</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sale-items-table" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 text-lg font-bold">
+                        <span>Total:</span>
+                        <span id="sale-total">Bs.0.00</span>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" id="sale-reset-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200"><i class="fas fa-undo mr-2"></i>Reiniciar</button>
+                        <button type="button" id="sale-save-btn" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-save mr-2"></i>Guardar Venta</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pedidos (Gestión de Pedidos) -->
+            <section id="orders" class="hidden space-y-6 fade-in">
+                <h2 class="text-3xl font-bold text-orange-600 mb-6">Gestión de Pedidos</h2>
+                
+                <!-- Formulario de Nuevo Pedido -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Nuevo Pedido</h3>
+                    <form id="order-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Producto y Tamaño -->
+                            <div>
+                                <label for="order-product" class="block text-gray-700 font-semibold mb-1">Producto</label>
+                                <input type="text" id="order-product" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer" placeholder="Seleccionar producto" readonly>
+                            </div>
+                            <div>
+                                <label for="order-size" class="block text-gray-700 font-semibold mb-1">Tamaño</label>
+                                <input type="text" id="order-size" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer" placeholder="Seleccionar tamaño" readonly disabled>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Sabor y Cantidad -->
+                            <div>
+                                <label for="order-flavor" class="block text-gray-700 font-semibold mb-1">Sabor</label>
+                                <input type="text" id="order-flavor" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer" placeholder="Seleccionar sabor" readonly disabled>
+                            </div>
+                            <div>
+                                <label for="order-quantity" class="block text-gray-700 font-semibold mb-1">Cantidad</label>
+                                <div class="flex items-center border rounded-md">
+                                    <button type="button" class="p-2 text-gray-500 hover:text-orange-500" id="order-quantity-minus"><i class="fas fa-minus"></i></button>
+                                    <input type="number" id="order-quantity" class="w-full text-center px-2 py-2 focus:outline-none" value="1" min="1">
+                                    <button type="button" class="p-2 text-gray-500 hover:text-orange-500" id="order-quantity-plus"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Cliente y Precio Especial -->
+                            <div>
+                                <label for="order-client" class="block text-gray-700 font-semibold mb-1">Cliente (Obligatorio)</label>
+                                <input type="text" id="order-client" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer" placeholder="Seleccionar cliente" readonly>
+                            </div>
+                            <div>
+                                <label for="order-price" class="block text-gray-700 font-semibold mb-1">Precio</label>
+                                <div class="flex items-center">
+                                    <input type="number" id="order-price" class="w-full px-3 py-2 border rounded-md bg-gray-100 cursor-not-allowed" disabled>
+                                    <label class="flex items-center ml-2 text-sm text-gray-600">
+                                        <input type="checkbox" id="order-special-price-toggle" class="mr-1"> Precio Especial
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="order-notes" class="block text-gray-700 font-semibold mb-1">Notas (Opcional)</label>
+                            <textarea id="order-notes" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-plus mr-2"></i>Agregar Item a Pedido</button>
+                    </form>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Items de Pedido</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tamaño</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sabor</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="order-items-table" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 text-lg font-bold">
+                        <span>Total:</span>
+                        <span id="order-total">Bs.0.00</span>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" id="order-reset-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200"><i class="fas fa-undo mr-2"></i>Reiniciar</button>
+                        <button type="button" id="order-save-btn" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-save mr-2"></i>Guardar Pedido</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Historial de Ventas -->
+            <section id="history-sales" class="hidden space-y-6 fade-in">
+                <h2 class="text-3xl font-bold text-orange-600 mb-6">Historial de Ventas</h2>
+                
+                <!-- Filtros -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Filtros</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label for="history-sales-start-date" class="block text-gray-700 font-semibold mb-1">Desde</label>
+                            <input type="date" id="history-sales-start-date" class="w-full px-3 py-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="history-sales-end-date" class="block text-gray-700 font-semibold mb-1">Hasta</label>
+                            <input type="date" id="history-sales-end-date" class="w-full px-3 py-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="history-sales-client" class="block text-gray-700 font-semibold mb-1">Cliente</label>
+                            <input type="text" id="history-sales-client" class="w-full px-3 py-2 border rounded-md" placeholder="Nombre de cliente">
+                        </div>
+                        <div>
+                            <label for="history-sales-status" class="block text-gray-700 font-semibold mb-1">Estado de Pago</label>
+                            <select id="history-sales-status" class="w-full px-3 py-2 border rounded-md">
+                                <option value="all">Todos</option>
+                                <option value="paid">Pagado</option>
+                                <option value="pending">Pendiente</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Historial -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Ventas Históricas</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pagado</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deuda</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notas</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entrega</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-sales-table" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Historial de Pedidos -->
+            <section id="history-orders" class="hidden space-y-6 fade-in">
+                <h2 class="text-3xl font-bold text-orange-600 mb-6">Historial de Pedidos</h2>
+
+                <!-- Filtros -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Filtros</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label for="history-orders-start-date" class="block text-gray-700 font-semibold mb-1">Desde</label>
+                            <input type="date" id="history-orders-start-date" class="w-full px-3 py-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="history-orders-end-date" class="block text-gray-700 font-semibold mb-1">Hasta</label>
+                            <input type="date" id="history-orders-end-date" class="w-full px-3 py-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="history-orders-client" class="block text-gray-700 font-semibold mb-1">Cliente</label>
+                            <input type="text" id="history-orders-client" class="w-full px-3 py-2 border rounded-md" placeholder="Nombre de cliente">
+                        </div>
+                        <div>
+                            <label for="history-orders-delivery-status" class="block text-gray-700 font-semibold mb-1">Estado de Entrega</label>
+                            <select id="history-orders-delivery-status" class="w-full px-3 py-2 border rounded-md">
+                                <option value="all">Todos</option>
+                                <option value="pending">Pendiente</option>
+                                <option value="delivered">Entregado</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Historial -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Pedidos Históricos</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notas</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-orders-table" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Productos (Gestión de Productos) -->
+            <section id="products" class="hidden space-y-6 fade-in">
+                <h2 class="text-3xl font-bold text-orange-600 mb-6">Gestión de Productos</h2>
+                
+                <div class="flex flex-wrap gap-4 items-center justify-between mb-4">
+                    <input type="text" id="product-search" class="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Buscar producto...">
+                    <div class="flex gap-2">
+                        <button id="add-product-btn" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-plus mr-2"></i>Nuevo Producto</button>
+                        <button id="import-products-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200"><i class="fas fa-file-import mr-2"></i>Importar</button>
+                        <button id="export-products-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200"><i class="fas fa-file-export mr-2"></i>Exportar</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tamaños y Precios</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sabores</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Clientes (Gestión de Clientes) -->
+            <section id="clients" class="hidden space-y-6 fade-in">
+                <h2 class="text-3xl font-bold text-orange-600 mb-6">Gestión de Clientes</h2>
+                
+                <div class="flex flex-wrap gap-4 items-center justify-between mb-4">
+                    <input type="text" id="client-search" class="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Buscar cliente...">
+                    <div class="flex gap-2">
+                        <button id="add-client-btn" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200"><i class="fas fa-user-plus mr-2"></i>Nuevo Cliente</button>
+                        <button id="import-clients-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200"><i class="fas fa-file-import mr-2"></i>Importar</button>
+                        <button id="export-clients-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200"><i class="fas fa-file-export mr-2"></i>Exportar</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teléfono</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deuda</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clients-table" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuración -->
+            <section id="settings" class="hidden space-y-6 fade-in">
+                <h2 class="text-3xl font-bold text-orange-600 mb-6">Configuración</h2>
+
+                <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
+                    <h3 class="text-xl font-semibold text-gray-700">Seguridad</h3>
+                    <form id="change-password-form" class="space-y-4">
+                        <div>
+                            <label for="current-password" class="block text-gray-700 font-semibold">Contraseña Actual</label>
+                            <input type="password" id="current-password" class="w-full px-3 py-2 border rounded-md" required>
+                        </div>
+                        <div>
+                            <label for="new-password" class="block text-gray-700 font-semibold">Nueva Contraseña</label>
+                            <input type="password" id="new-password" class="w-full px-3 py-2 border rounded-md" required>
+                        </div>
+                        <div>
+                            <label for="confirm-password" class="block text-gray-700 font-semibold">Confirmar Nueva Contraseña</label>
+                            <input type="password" id="confirm-password" class="w-full px-3 py-2 border rounded-md" required>
+                        </div>
+                        <button type="submit" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 transition-colors duration-200">Cambiar Contraseña</button>
+                    </form>
+                    <div class="mt-3">
+                        <button id="reset-password-btn" type="button" class="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200">
+                            Restablecer contraseña (olvidé)
+                        </button>
+                    </div>
+        
+                    <div class="mt-4">
+                        <h4 class="font-semibold text-gray-700 mb-2">Bloquear Secciones</h4>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" data-lock="sales" class="form-checkbox h-5 w-5 text-orange-600 rounded">
+                                <span class="ml-2 text-gray-700">Ventas</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" data-lock="orders" class="form-checkbox h-5 w-5 text-orange-600 rounded">
+                                <span class="ml-2 text-gray-700">Pedidos</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" data-lock="products" class="form-checkbox h-5 w-5 text-orange-600 rounded">
+                                <span class="ml-2 text-gray-700">Productos</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" data-lock="clients" class="form-checkbox h-5 w-5 text-orange-600 rounded">
+                                <span class="ml-2 text-gray-700">Clientes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" data-lock="settings" class="form-checkbox h-5 w-5 text-orange-600 rounded">
+                                <span class="ml-2 text-gray-700">Configuración</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
+                    <h3 class="text-xl font-semibold text-gray-700">Copia de Seguridad y Restauración</h3>
+                    <div class="flex gap-2">
+                        <button id="export-backup-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200"><i class="fas fa-download mr-2"></i>Exportar Backup</button>
+                        <button id="import-backup-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 transition-colors duration-200"><i class="fas fa-upload mr-2"></i>Importar Backup</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Base (Genérico) -->
+    <div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 fade-in">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] custom-scrollbar">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="modal-title" class="text-2xl font-bold text-gray-800"></h3>
+                    <button class="text-gray-400 hover:text-gray-600" id="close-modal-btn"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div id="modal-content"></div>
+                <div class="flex justify-end mt-6 gap-2">
+                    <button class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-300" id="modal-cancel-btn">Cancelar</button>
+                    <button class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600" id="modal-confirm-btn">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Selection Modal -->
+    <div id="client-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 fade-in">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-y-auto max-h-[80vh] custom-scrollbar">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-gray-800">Seleccionar Cliente</h3>
+                    <button class="text-gray-400 hover:text-gray-600" id="close-client-modal-btn"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <input type="text" id="client-search-modal" class="w-full px-3 py-2 border rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Buscar cliente...">
+                <ul id="client-list-modal" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option Selection Modal (for product, size, flavor) -->
+    <div id="option-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 fade-in">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-y-auto max-h-[80vh] custom-scrollbar">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="option-modal-title" class="text-2xl font-bold text-gray-800"></h3>
+                    <button class="text-gray-400 hover:text-gray-600" id="close-option-modal-btn"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <ul id="option-list-modal" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2"></div>
+
+    <script>
+        // Data and Core Functions
+        const app = {
+            data: {},
+            currentItems: {
+                sales: [],
+                orders: []
+            },
+            currentClientInput: null,
+            init() {
+                this.loadData();
+                this.bindEventListeners();
+                this.renderAll();
+                this.showSection('dashboard');
+                this.updateSettingsUI();
+            },
+            loadData() {
+                const defaults = {
+                    productos: [
+                        { nombre: "Salsa de Soya", tamanos: [{ nombre: "Grande", precio: 25 }, { nombre: "Pequeño", precio: 15 }], sabores: ["Original", "Agridulce"] },
+                        { nombre: "Vinagre", tamanos: [{ nombre: "Botella", precio: 10 }], sabores: [] },
+                        { nombre: "Limonero", tamanos: [{ nombre: "Galón", precio: 30 }], sabores: ["Con Sal", "Sin Sal"] }
+                    ],
+                    clientes: [{ nombre: "Juan Perez", telefono: "12345678", ubicacion: "Calle Falsa 123", notas: "" }],
+                    ventas: [],
+                    pedidos: [],
+                    adminPassword: "1234",
+                    recoveryCode: "FENIXRESET",
+                    lockedSections: []
+                };
+
+                for (const key in defaults) {
+                    const data = localStorage.getItem(key);
+                    this.data[key] = data ? JSON.parse(data) : defaults[key];
+                }
+                const currentItemsData = localStorage.getItem('currentItems');
+                this.currentItems = currentItemsData ? JSON.parse(currentItemsData) : {sales: [], orders: []};
+            },
+            saveData(key, data) {
+                localStorage.setItem(key, JSON.stringify(data));
+                if (key !== 'currentItems') {
+                    this.data[key] = data;
+                } else {
+                    this.currentItems = data;
+                }
+            },
+            toast(message, type = 'success') {
+                const toastContainer = document.getElementById('toast-container');
+                const toastDiv = document.createElement('div');
+                toastDiv.className = `p-4 rounded-md shadow-lg text-white font-semibold flex items-center gap-2 fade-in`;
+
+                let bgColor;
+                let icon;
+                if (type === 'success') {
+                    bgColor = 'bg-green-500';
+                    icon = '<i class="fas fa-check-circle"></i>';
+                } else if (type === 'error') {
+                    bgColor = 'bg-red-500';
+                    icon = '<i class="fas fa-times-circle"></i>';
+                } else {
+                    bgColor = 'bg-blue-500';
+                    icon = '<i class="fas fa-info-circle"></i>';
+                }
+
+                toastDiv.className += ` ${bgColor}`;
+                toastDiv.innerHTML = `${icon}<span>${message}</span>`;
+                toastContainer.appendChild(toastDiv);
+
+                setTimeout(() => {
+                    toastDiv.classList.remove('fade-in');
+                    toastDiv.classList.add('fade-out'); // You'd need to define this
+                    setTimeout(() => toastDiv.remove(), 300);
+                }, 3000);
+            },
+            showModal(title, content, onConfirm = null, showCancel = true) {
+                const modalContainer = document.getElementById('modal-container');
+                const modalTitle = document.getElementById('modal-title');
+                const modalContent = document.getElementById('modal-content');
+                const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+                const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+                modalTitle.textContent = title;
+                modalContent.innerHTML = '';
+                modalContent.appendChild(content);
+
+                if (onConfirm) {
+                    modalConfirmBtn.style.display = 'inline-block';
+                    modalConfirmBtn.onclick = () => {
+                        onConfirm();
+                        this.closeModal();
+                    };
+                } else {
+                    modalConfirmBtn.style.display = 'none';
+                }
+
+                if (showCancel) {
+                    modalCancelBtn.style.display = 'inline-block';
+                    modalCancelBtn.onclick = () => this.closeModal();
+                } else {
+                    modalCancelBtn.style.display = 'none';
+                }
+
+                modalContainer.classList.remove('hidden');
+            },
+            closeModal() {
+                document.getElementById('modal-container').classList.add('hidden');
+            },
+            formatCurrency(amount) {
+                return `Bs.${amount.toFixed(2)}`;
+            },
+            showOptionModal(title, options, callback) {
+                document.getElementById('option-modal-title').textContent = title;
+                const list = document.getElementById('option-list-modal');
+                list.innerHTML = '';
+                options.forEach(opt => {
+                    const li = document.createElement('li');
+                    li.className = 'px-4 py-2 bg-gray-100 rounded-md cursor-pointer hover:bg-orange-100 transition-colors duration-200';
+                    li.textContent = opt.display;
+                    li.onclick = () => {
+                        callback(opt.value, opt.display);
+                        this.closeOptionModal();
+                    };
+                    list.appendChild(li);
+                });
+                document.getElementById('option-selection-modal').classList.remove('hidden');
+            },
+            closeOptionModal() {
+                document.getElementById('option-selection-modal').classList.add('hidden');
+            },
+            
+            // UI Renderers
+            renderAll() {
+                this.renderProductsTable();
+                this.renderClientsTable();
+                this.renderSalesHistory();
+                this.renderOrdersHistory();
+                this.renderDashboard();
+                this.updateSettingsUI();
+            },
+            showSection(sectionId) {
+                const sections = document.querySelectorAll('main section');
+                sections.forEach(sec => sec.classList.add('hidden'));
+
+                const navButtons = document.querySelectorAll('#sidebar button');
+                navButtons.forEach(btn => btn.classList.remove('active-nav'));
+
+                const section = document.getElementById(sectionId);
+                const navButton = document.querySelector(`[data-section="${sectionId}"]`);
+
+                if (this.data.lockedSections.includes(sectionId)) {
+                    this.promptPassword(() => {
+                        section.classList.remove('hidden');
+                        if (navButton) navButton.classList.add('active-nav');
+                        if (window.innerWidth < 768) {
+                            document.getElementById('sidebar').classList.add('hidden');
+                        }
+                        if (sectionId === 'sales') this.renderSaleItems();
+                        if (sectionId === 'orders') this.renderOrderItems();
+                    });
+                } else {
+                    section.classList.remove('hidden');
+                    if (navButton) navButton.classList.add('active-nav');
+                    if (window.innerWidth < 768) {
+                        document.getElementById('sidebar').classList.add('hidden');
+                    }
+                    if (sectionId === 'sales') this.renderSaleItems();
+                    if (sectionId === 'orders') this.renderOrderItems();
+                }
+            },
+            promptPassword(callback) {
+                const content = document.createElement('div');
+                content.innerHTML = `<p class="mb-4">Esta sección está bloqueada. Por favor, introduce la contraseña de administrador.</p>
+                                     <input type="password" id="password-input" class="w-full px-3 py-2 border rounded-md" placeholder="Contraseña">`;
+                this.showModal('Acceso Restringido', content, () => {
+                    const password = (document.getElementById('password-input').value || '').trim();
+                    if (password === this.data.adminPassword) {
+                        callback();
+                    } else {
+                        this.toast('Contraseña incorrecta', 'error');
+                    }
+                });
+            },
+            showClientSelectionModal(inputId) {
+                this.currentClientInput = document.getElementById(inputId);
+                const modal = document.getElementById('client-selection-modal');
+                modal.classList.remove('hidden');
+                this.renderClientListModal('');
+                document.getElementById('client-search-modal').focus();
+            },
+            closeClientSelectionModal() {
+                document.getElementById('client-selection-modal').classList.add('hidden');
+                document.getElementById('client-search-modal').value = '';
+            },
+            renderClientListModal(searchTerm) {
+                const list = document.getElementById('client-list-modal');
+                list.innerHTML = '';
+                const filteredClients = this.data.clientes.filter(c => c.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
+                filteredClients.forEach((c, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'px-4 py-2 bg-gray-100 rounded-md cursor-pointer hover:bg-orange-100 transition-colors duration-200';
+                    li.textContent = c.nombre;
+                    li.onclick = () => {
+                        this.currentClientInput.value = c.nombre;
+                        this.closeClientSelectionModal();
+                    };
+                    list.appendChild(li);
+                });
+            },
+
+            // Section Specific Logic
+            // Dashboard
+            renderDashboard() {
+                const today = new Date().toISOString().split('T')[0];
+                const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+                
+                const salesToday = this.data.ventas.filter(v => v.fecha.startsWith(today));
+                const salesMonth = this.data.ventas.filter(v => v.fecha >= startOfMonth);
+
+                const totalSalesToday = salesToday.reduce((sum, v) => sum + v.total, 0);
+                const totalSalesMonth = salesMonth.reduce((sum, v) => sum + v.total, 0);
+
+                document.getElementById('sales-today-amount').textContent = this.formatCurrency(totalSalesToday);
+                document.getElementById('sales-today-count').textContent = `${salesToday.length} ventas`;
+                document.getElementById('sales-month-amount').textContent = this.formatCurrency(totalSalesMonth);
+                document.getElementById('sales-month-count').textContent = `${salesMonth.length} ventas`;
+                document.getElementById('total-clients').textContent = this.data.clientes.length;
+            },
+
+            // Sales
+            renderSaleItems() {
+                const tableBody = document.getElementById('sale-items-table');
+                tableBody.innerHTML = '';
+                let total = 0;
+                this.currentItems.sales.forEach((item, index) => {
+                    const subtotal = item.precio * item.cantidad;
+                    total += subtotal;
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${item.producto}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.tamano}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.sabor || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.cantidad}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${this.formatCurrency(item.precio)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${this.formatCurrency(subtotal)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button class="text-red-500 hover:text-red-700" onclick="app.removeSaleItem(${index})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                document.getElementById('sale-total').textContent = this.formatCurrency(total);
+            },
+            removeSaleItem(index) {
+                this.currentItems.sales.splice(index, 1);
+                this.saveData('currentItems', this.currentItems);
+                this.renderSaleItems();
+            },
+            resetSaleForm() {
+                document.getElementById('sale-form').reset();
+                this.currentItems.sales = [];
+                this.saveData('currentItems', this.currentItems);
+                this.renderSaleItems();
+                document.getElementById('sale-price').disabled = true;
+                document.getElementById('sale-price').classList.add('bg-gray-100', 'cursor-not-allowed');
+                document.getElementById('sale-product').value = '';
+                document.getElementById('sale-product').dataset.index = '';
+                document.getElementById('sale-size').value = '';
+                document.getElementById('sale-size').dataset.index = '';
+                document.getElementById('sale-size').disabled = true;
+                document.getElementById('sale-flavor').value = '';
+                document.getElementById('sale-flavor').disabled = true;
+                document.getElementById('sale-client').value = '';
+            },
+            saveSale() {
+                if (this.currentItems.sales.length === 0) {
+                    this.toast('Por favor, agrega al menos un producto a la venta.', 'error');
+                    return;
+                }
+                
+                const total = this.currentItems.sales.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+                const clientName = document.getElementById('sale-client').value.trim();
+                const clientIndex = clientName ? this.data.clientes.findIndex(c => c.nombre === clientName) : -1;
+                const clientId = clientIndex !== -1 ? clientIndex : null;
+                const notes = document.getElementById('sale-notes').value;
+
+                const content = document.createElement('div');
+                content.innerHTML = `
+                    <p class="text-xl font-bold mb-4">Total de Venta: ${this.formatCurrency(total)}</p>
+                    <label class="block mb-2"><input type="radio" name="payment-type" value="paid" checked> Pagado</label>
+                    <label class="block mb-2"><input type="radio" name="payment-type" value="pending"> Pendiente (Crédito)</label>
+                    <label class="block mb-2 flex items-center gap-2">
+                        <input type="radio" name="payment-type" value="partial"> Saldo
+                        <input type="number" id="paid-amount" class="w-24 px-2 py-1 border rounded-md" placeholder="Monto" disabled>
+                    </label>
+                `;
+                content.querySelector('input[value="partial"]').addEventListener('change', (e) => {
+                    document.getElementById('paid-amount').disabled = !e.target.checked;
+                });
+                content.querySelector('input[value="paid"]').addEventListener('change', () => document.getElementById('paid-amount').disabled = true);
+                content.querySelector('input[value="pending"]').addEventListener('change', () => document.getElementById('paid-amount').disabled = true);
+                
+                this.showModal('Confirmar Pago', content, () => {
+                    const paymentType = document.querySelector('input[name="payment-type"]:checked').value;
+                    let amountPaid = 0;
+                    let debt = 0;
+                    let status = 'pending';
+
+                    if (paymentType === 'paid') {
+                        amountPaid = total;
+                        status = 'paid';
+                    } else if (paymentType === 'partial') {
+                        amountPaid = parseFloat(document.getElementById('paid-amount').value) || 0;
+                        debt = total - amountPaid;
+                    } else {
+                        debt = total;
+                    }
+
+                    const newSale = {
+                        clienteId: clientId,
+                        items: this.currentItems.sales,
+                        total,
+                        amountPaid,
+                        debt,
+                        notas: notes,
+                        fecha: new Date().toISOString(),
+                        status: status,
+                        delivery_status: 'pending'
+                    };
+
+                    this.data.ventas.unshift(newSale); // Add to the beginning for chronological view
+                    this.saveData('ventas', this.data.ventas);
+
+                    this.toast('Venta guardada exitosamente.', 'success');
+                    this.resetSaleForm();
+                    this.renderAll();
+                    document.getElementById('sale-save-btn').disabled = false;
+                });
+            },
+
+            // Orders
+            renderOrderItems() {
+                const tableBody = document.getElementById('order-items-table');
+                tableBody.innerHTML = '';
+                let total = 0;
+                this.currentItems.orders.forEach((item, index) => {
+                    const subtotal = item.precio * item.cantidad;
+                    total += subtotal;
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${item.producto}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.tamano}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.sabor || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.cantidad}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${this.formatCurrency(item.precio)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${this.formatCurrency(subtotal)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button class="text-red-500 hover:text-red-700" onclick="app.removeOrderItem(${index})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                document.getElementById('order-total').textContent = this.formatCurrency(total);
+            },
+            removeOrderItem(index) {
+                this.currentItems.orders.splice(index, 1);
+                this.saveData('currentItems', this.currentItems);
+                this.renderOrderItems();
+            },
+            resetOrderForm() {
+                document.getElementById('order-form').reset();
+                this.currentItems.orders = [];
+                this.saveData('currentItems', this.currentItems);
+                this.renderOrderItems();
+                document.getElementById('order-price').disabled = true;
+                document.getElementById('order-price').classList.add('bg-gray-100', 'cursor-not-allowed');
+                document.getElementById('order-product').value = '';
+                document.getElementById('order-product').dataset.index = '';
+                document.getElementById('order-size').value = '';
+                document.getElementById('order-size').dataset.index = '';
+                document.getElementById('order-size').disabled = true;
+                document.getElementById('order-flavor').value = '';
+                document.getElementById('order-flavor').disabled = true;
+                document.getElementById('order-client').value = '';
+            },
+            saveOrder() {
+                if (this.currentItems.orders.length === 0) {
+                    this.toast('Por favor, agrega al menos un producto al pedido.', 'error');
+                    document.getElementById('order-save-btn').disabled = false;
+                    return;
+                }
+                const clientName = document.getElementById('order-client').value.trim();
+                const clientIndex = this.data.clientes.findIndex(c => c.nombre === clientName);
+                if (clientIndex === -1) {
+                    this.toast('El cliente es obligatorio para un pedido y debe existir.', 'error');
+                    document.getElementById('order-save-btn').disabled = false;
+                    return;
+                }
+                const total = this.currentItems.orders.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+                const notes = document.getElementById('order-notes').value;
+                
+                const newOrder = {
+                    clienteId: clientIndex,
+                    items: this.currentItems.orders,
+                    total,
+                    notas: notes,
+                    fecha: new Date().toISOString(),
+                    status: 'pending',
+                    delivery_status: 'pending'
+                };
+                
+                this.data.pedidos.unshift(newOrder);
+                this.saveData('pedidos', this.data.pedidos);
+                this.resetOrderForm();
+                this.toast('Pedido guardado exitosamente.', 'success');
+                this.renderAll();
+                document.getElementById('order-save-btn').disabled = false;
+            },
+
+            // History
+            renderSalesHistory() {
+                const tableBody = document.getElementById('history-sales-table');
+                tableBody.innerHTML = '';
+                const sales = this.data.ventas.slice(); // Use a copy for sorting/filtering
+                sales.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+                const filters = {
+                    startDate: document.getElementById('history-sales-start-date').value,
+                    endDate: document.getElementById('history-sales-end-date').value,
+                    client: document.getElementById('history-sales-client').value.toLowerCase(),
+                    status: document.getElementById('history-sales-status').value
+                };
+
+                const filteredSales = sales.filter(s => {
+                    const saleDate = new Date(s.fecha).toISOString().split('T')[0];
+                    const isDateMatch = (!filters.startDate || saleDate >= filters.startDate) && (!filters.endDate || saleDate <= filters.endDate);
+                    const clientName = s.clienteId !== null ? this.data.clientes[s.clienteId].nombre.toLowerCase() : '';
+                    const isClientMatch = !filters.client || clientName.includes(filters.client);
+                    const isStatusMatch = filters.status === 'all' || s.status === filters.status;
+                    return isDateMatch && isClientMatch && isStatusMatch;
+                });
+
+                filteredSales.forEach((s) => {
+                    const originalIndex = this.data.ventas.indexOf(s);
+                    const clientName = s.clienteId !== null ? this.data.clientes[s.clienteId].nombre : 'N/A';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${new Date(s.fecha).toLocaleDateString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${clientName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${this.formatCurrency(s.total)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${this.formatCurrency(s.amountPaid)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${this.formatCurrency(s.debt)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${s.notas}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${s.status === 'paid' ? 'Pagado' : 'Pendiente'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.delivery_status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}">
+                                ${s.delivery_status === 'delivered' ? 'Entregado' : 'Pendiente'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button class="text-blue-500 hover:text-blue-700 mr-2" onclick="app.viewSaleDetails(${originalIndex})"><i class="fas fa-eye"></i></button>
+                            ${s.status === 'pending' ? `<button class="text-green-500 hover:text-green-700 mr-2" onclick="app.confirmMarkSaleAsPaid(${originalIndex})"><i class="fas fa-check"></i></button>` : ''}
+                            ${s.delivery_status === 'pending' ? `<button class="text-green-500 hover:text-green-700 mr-2" onclick="app.confirmMarkSaleAsDelivered(${originalIndex})"><i class="fas fa-truck"></i></button>` : ''}
+    <button class="text-red-500 hover:text-red-700" onclick="app.confirmDeleteSale(${originalIndex})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            },
+            viewSaleDetails(index) {
+                const sale = this.data.ventas[index];
+                const clientName = sale.clienteId !== null ? this.data.clientes[sale.clienteId].nombre : 'N/A';
+                const itemsList = sale.items.map(item => `<li>${item.cantidad}x ${item.producto} (${item.tamano}) - ${this.formatCurrency(item.precio * item.cantidad)}</li>`).join('');
+                
+                const content = document.createElement('div');
+                content.innerHTML = `
+                    <p><strong>Fecha:</strong> ${new Date(sale.fecha).toLocaleDateString()}</p>
+                    <p><strong>Cliente:</strong> ${clientName}</p>
+                    <p><strong>Notas:</strong> ${sale.notas || 'N/A'}</p>
+                    <p><strong>Total:</strong> ${this.formatCurrency(sale.total)}</p>
+                    <p><strong>Pagado:</strong> ${this.formatCurrency(sale.amountPaid)}</p>
+                    <p><strong>Deuda:</strong> ${this.formatCurrency(sale.debt)}</p>
+                    <p><strong>Entrega:</strong> ${sale.delivery_status === 'delivered' ? 'Entregado' : 'Pendiente'}</p>
+                    <h4 class="font-bold mt-4">Items:</h4>
+                    <ul class="list-disc list-inside">${itemsList}</ul>
+                `;
+                this.showModal('Detalles de Venta', content, null);
+            },
+            confirmMarkSaleAsPaid(index) {
+                const content = document.createElement('div');
+                content.innerHTML = `<p>¿Estás seguro de que quieres marcar esta venta como pagada? Esta acción no se puede deshacer.</p>`;
+                this.showModal('Confirmar Acción', content, () => {
+                    this.markSaleAsPaid(index);
+                });
+            },
+            markSaleAsPaid(index) {
+                const sale = this.data.ventas[index];
+                sale.status = 'paid';
+                sale.amountPaid = sale.total;
+                sale.debt = 0;
+                this.saveData('ventas', this.data.ventas);
+                this.toast('Venta marcada como pagada.', 'success');
+                this.renderSalesHistory();
+                this.renderDashboard();
+            },
+            confirmMarkSaleAsDelivered(index) {
+                const content = document.createElement('div');
+                content.innerHTML = `<p>¿Estás seguro de que quieres marcar esta venta como entregada? Esta acción no se puede deshacer.</p>`;
+                this.showModal('Confirmar Acción', content, () => {
+                    this.markSaleAsDelivered(index);
+                });
+            },
+            markSaleAsDelivered(index) {
+                const sale = this.data.ventas[index];
+                sale.delivery_status = 'delivered';
+                this.saveData('ventas', this.data.ventas);
+                this.toast('Venta marcada como entregada.', 'success');
+                this.renderSalesHistory();
+            },
+            
+            
+    confirmDeleteSale(index) {
+        
+this.promptPassword(() => {
+    this.deleteSale(index);
+});
+
+    },
+
+    deleteSale(index) {
+        this.data.ventas.splice(index, 1);
+        this.saveData('ventas', this.data.ventas);
+        this.toast('Venta eliminada correctamente', 'success');
+        this.renderSalesHistory();
+        this.renderDashboard();
+    },
+
+    confirmDeleteOrder(index) {
+        
+this.promptPassword(() => {
+    this.deleteOrder(index);
+});
+
+    },
+
+    deleteOrder(index) {
+        this.data.pedidos.splice(index, 1);
+        this.saveData('pedidos', this.data.pedidos);
+        this.toast('Pedido eliminado correctamente', 'success');
+        this.renderOrdersHistory();
+    },
+
+            renderOrdersHistory() {
+                const tableBody = document.getElementById('history-orders-table');
+                tableBody.innerHTML = '';
+                const orders = this.data.pedidos.slice();
+                orders.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+                const filters = {
+                    startDate: document.getElementById('history-orders-start-date').value,
+                    endDate: document.getElementById('history-orders-end-date').value,
+                    client: document.getElementById('history-orders-client').value.toLowerCase(),
+                    deliveryStatus: document.getElementById('history-orders-delivery-status').value
+                };
+
+                const filteredOrders = orders.filter(o => {
+                    const orderDate = new Date(o.fecha).toISOString().split('T')[0];
+                    const isDateMatch = (!filters.startDate || orderDate >= filters.startDate) && (!filters.endDate || orderDate <= filters.endDate);
+                    const clientName = o.clienteId !== null ? this.data.clientes[o.clienteId].nombre.toLowerCase() : '';
+                    const isClientMatch = !filters.client || clientName.includes(filters.client);
+                    const isStatusMatch = filters.deliveryStatus === 'all' || o.delivery_status === filters.deliveryStatus;
+                    return isDateMatch && isClientMatch && isStatusMatch;
+                });
+                
+                filteredOrders.forEach((o) => {
+                    const originalIndex = this.data.pedidos.indexOf(o);
+                    const clientName = o.clienteId !== null ? this.data.clientes[o.clienteId].nombre : 'N/A';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${new Date(o.fecha).toLocaleDateString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${clientName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${this.formatCurrency(o.total)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${o.notas}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${o.delivery_status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}">
+                                ${o.delivery_status === 'delivered' ? 'Entregado' : 'Pendiente'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button class="text-blue-500 hover:text-blue-700 mr-2" onclick="app.viewOrderDetails(${originalIndex})"><i class="fas fa-eye"></i></button>
+                            ${o.delivery_status === 'pending' ? `<button class="text-green-500 hover:text-green-700 mr-2" onclick="app.confirmMarkOrderAsDelivered(${originalIndex})"><i class="fas fa-truck"></i></button>` : ''}
+                            <button class="text-orange-500 hover:text-orange-700 mr-2" onclick="app.confirmConvertOrderToSale(${originalIndex})"><i class="fas fa-exchange-alt"></i></button>
+    <button class="text-red-500 hover:text-red-700" onclick="app.confirmDeleteOrder(${originalIndex})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            },
+            viewOrderDetails(index) {
+                 const order = this.data.pedidos[index];
+                 const clientName = order.clienteId !== null ? this.data.clientes[order.clienteId].nombre : 'N/A';
+                 const itemsList = order.items.map(item => `<li>${item.cantidad}x ${item.producto} (${item.tamano}) - ${this.formatCurrency(item.precio * item.cantidad)}</li>`).join('');
+                
+                 const content = document.createElement('div');
+                 content.innerHTML = `
+                     <p><strong>Fecha:</strong> ${new Date(order.fecha).toLocaleDateString()}</p>
+                     <p><strong>Cliente:</strong> ${clientName}</p>
+                     <p><strong>Notas:</strong> ${order.notas || 'N/A'}</p>
+                     <p><strong>Total:</strong> ${this.formatCurrency(order.total)}</p>
+                     <p><strong>Estado:</strong> ${order.delivery_status === 'delivered' ? 'Entregado' : 'Pendiente'}</p>
+                     <h4 class="font-bold mt-4">Items:</h4>
+                     <ul class="list-disc list-inside">${itemsList}</ul>
+                 `;
+                 this.showModal('Detalles de Pedido', content, null);
+            },
+            confirmMarkOrderAsDelivered(index) {
+                const content = document.createElement('div');
+                content.innerHTML = `<p>¿Estás seguro de que quieres marcar este pedido como entregado? Esta acción no se puede deshacer.</p>`;
+                this.showModal('Confirmar Acción', content, () => {
+                    this.markOrderAsDelivered(index);
+                });
+            },
+            markOrderAsDelivered(index) {
+                const order = this.data.pedidos[index];
+                order.delivery_status = 'delivered';
+                this.saveData('pedidos', this.data.pedidos);
+                this.toast('Pedido marcado como entregado.', 'success');
+                this.renderOrdersHistory();
+            },
+            confirmConvertOrderToSale(index) {
+                const content = document.createElement('div');
+                content.innerHTML = `<p>¿Estás seguro de que quieres convertir este pedido en una venta? Esta acción no se puede deshacer.</p>`;
+                this.showModal('Confirmar Conversión', content, () => {
+                    this.convertOrderToSale(index);
+                });
+            },
+            convertOrderToSale(index) {
+                const order = this.data.pedidos[index];
+                const newSale = {
+                    ...order,
+                    amountPaid: 0,
+                    debt: order.total,
+                    status: 'pending',
+                    delivery_status: 'pending'
+                };
+                
+                this.data.ventas.unshift(newSale);
+                this.saveData('ventas', this.data.ventas);
+                
+                this.data.pedidos.splice(index, 1);
+                this.saveData('pedidos', this.data.pedidos);
+                
+                this.toast('Pedido convertido a venta.', 'success');
+                this.renderOrdersHistory();
+                this.renderSalesHistory();
+            },
+
+            // Products
+            renderProductsTable() {
+                const tableBody = document.getElementById('products-table');
+                tableBody.innerHTML = '';
+                const searchTerm = document.getElementById('product-search').value.toLowerCase();
+                const filteredProducts = this.data.productos.filter(p => p.nombre.toLowerCase().includes(searchTerm));
+
+                filteredProducts.forEach((p, index) => {
+                    const sizesText = p.tamanos.map(s => `${s.nombre} (${this.formatCurrency(s.precio)})`).join(', ');
+                    const flavorsText = p.sabores.length > 0 ? p.sabores.join(', ') : 'N/A';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${p.nombre}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${sizesText}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${flavorsText}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button class="text-orange-500 hover:text-orange-700 mr-2" onclick="app.editProduct(${index})"><i class="fas fa-edit"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            },
+            showProductModal(product = null, index = -1) {
+                const content = document.createElement('form');
+                content.id = 'product-form-modal';
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
+                            <input type="text" id="modal-product-name" class="w-full px-3 py-2 border rounded-md" required value="${product ? product.nombre : ''}">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Tamaños y Precios</label>
+                            <div id="modal-sizes-container"></div>
+                            <button type="button" id="add-size-btn" class="bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm"><i class="fas fa-plus mr-1"></i>Añadir Tamaño</button>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Sabores (Opcional)</label>
+                            <div id="modal-flavors-container"></div>
+                            <button type="button" id="add-flavor-btn" class="bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm"><i class="fas fa-plus mr-1"></i>Añadir Sabor</button>
+                        </div>
+                    </div>
+                `;
+
+                this.showModal(product ? 'Editar Producto' : 'Nuevo Producto', content, () => {
+                    this.saveProduct(index);
+                });
+                
+                const sizesContainer = document.getElementById('modal-sizes-container');
+                const flavorsContainer = document.getElementById('modal-flavors-container');
+
+                const renderSizeInput = (s = { nombre: '', precio: '' }) => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center gap-2';
+                    div.innerHTML = `
+                        <input type="text" placeholder="Nombre" value="${s.nombre}" class="flex-1 px-2 py-1 border rounded-md" required>
+                        <input type="number" placeholder="Precio" value="${s.precio}" class="w-24 px-2 py-1 border rounded-md" required>
+                        <button type="button" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    `;
+                    div.querySelector('button').onclick = () => div.remove();
+                    sizesContainer.appendChild(div);
+                };
+                
+                const renderFlavorInput = (f = '') => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center gap-2';
+                    div.innerHTML = `
+                        <input type="text" placeholder="Sabor" value="${f}" class="flex-1 px-2 py-1 border rounded-md">
+                        <button type="button" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    `;
+                    div.querySelector('button').onclick = () => div.remove();
+                    flavorsContainer.appendChild(div);
+                };
+
+                (product ? product.tamanos : [{}]).forEach(s => renderSizeInput(s));
+                (product ? product.sabores : [{}]).forEach(f => renderFlavorInput(f));
+
+                document.getElementById('add-size-btn').onclick = () => renderSizeInput();
+                document.getElementById('add-flavor-btn').onclick = () => renderFlavorInput();
+            },
+            saveProduct(index) {
+                const name = document.getElementById('modal-product-name').value;
+                const sizes = Array.from(document.querySelectorAll('#modal-sizes-container > div')).map(div => {
+                    const inputs = div.querySelectorAll('input');
+                    const size = {
+                        nombre: inputs[0].value,
+                        precio: parseFloat(inputs[1].value)
+                    };
+                    return size;
+                });
+                const flavors = Array.from(document.querySelectorAll('#modal-flavors-container > div > input')).map(input => input.value).filter(f => f.trim() !== '');
+
+                if (!name || sizes.some(s => !s.nombre || isNaN(s.precio))) {
+                    this.toast('Por favor, completa todos los campos requeridos.', 'error');
+                    return;
+                }
+
+                const newProduct = { nombre: name, tamanos: sizes, sabores: flavors };
+                if (index !== -1) {
+                    this.data.productos[index] = newProduct;
+                } else {
+                    this.data.productos.push(newProduct);
+                }
+                this.saveData('productos', this.data.productos);
+                this.toast('Producto guardado.', 'success');
+                this.renderProductsTable();
+            },
+            editProduct(index) {
+                this.showProductModal(this.data.productos[index], index);
+            },
+
+            // Clients
+            renderClientsTable() {
+                const tableBody = document.getElementById('clients-table');
+                tableBody.innerHTML = '';
+                const searchTerm = document.getElementById('client-search').value.toLowerCase();
+                const filteredClients = this.data.clientes.filter(c => c.nombre.toLowerCase().includes(searchTerm));
+
+                filteredClients.forEach((c, index) => {
+                    const clientDebt = this.data.ventas
+                        .filter(v => v.clienteId === index && v.debt > 0)
+                        .reduce((sum, v) => sum + v.debt, 0);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${c.nombre}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${c.telefono}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${c.ubicacion}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-red-500 font-semibold">${this.formatCurrency(clientDebt)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button class="text-blue-500 hover:text-blue-700 mr-2" onclick="app.viewClientHistory(${index})"><i class="fas fa-history"></i></button>
+                            <button class="text-orange-500 hover:text-orange-700 mr-2" onclick="app.editClient(${index})"><i class="fas fa-edit"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            },
+            showClientModal(client = null, index = -1) {
+                const content = document.createElement('form');
+                content.id = 'client-form-modal';
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                            <input type="text" id="modal-client-name" class="w-full px-3 py-2 border rounded-md" required value="${client ? client.nombre : ''}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+                            <input type="tel" id="modal-client-phone" class="w-full px-3 py-2 border rounded-md" value="${client ? client.telefono : ''}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Ubicación</label>
+                            <input type="text" id="modal-client-location" class="w-full px-3 py-2 border rounded-md" value="${client ? client.ubicacion : ''}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Notas</label>
+                            <textarea id="modal-client-notes" class="w-full px-3 py-2 border rounded-md" rows="2">${client ? client.notas : ''}</textarea>
+                        </div>
+                    </div>
+                `;
+
+                this.showModal(client ? 'Editar Cliente' : 'Nuevo Cliente', content, () => {
+                    this.saveClient(index);
+                });
+            },
+            saveClient(index) {
+                const name = document.getElementById('modal-client-name').value;
+                const phone = document.getElementById('modal-client-phone').value;
+                const location = document.getElementById('modal-client-location').value;
+                const notes = document.getElementById('modal-client-notes').value;
+                if (!name) {
+                    this.toast('El nombre del cliente es obligatorio.', 'error');
+                    return;
+                }
+                const newClient = { nombre: name, telefono: phone, ubicacion: location, notas: notes };
+                if (index !== -1) {
+                    this.data.clientes[index] = newClient;
+                } else {
+                    this.data.clientes.push(newClient);
+                }
+                this.saveData('clientes', this.data.clientes);
+                this.toast('Cliente guardado.', 'success');
+                this.renderClientsTable();
+            },
+            editClient(index) {
+                this.showClientModal(this.data.clientes[index], index);
+            },
+            viewClientHistory(index) {
+                const clientSales = this.data.ventas.filter(v => v.clienteId === index);
+                const salesHtml = clientSales.map(v => `
+                    <tr>
+                        <td class="px-4 py-2">${new Date(v.fecha).toLocaleDateString()}</td>
+                        <td class="px-4 py-2">${this.formatCurrency(v.total)}</td>
+                        <td class="px-4 py-2">${this.formatCurrency(v.debt)}</td>
+                        <td class="px-4 py-2">${v.status === 'paid' ? 'Pagado' : 'Pendiente'}</td>
+                    </tr>
+                 `).join('');
+
+                 const content = document.createElement('div');
+                 content.innerHTML = `
+                    <p class="mb-4">Historial de ventas para <strong>${this.data.clientes[index].nombre}</strong></p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Fecha</th>
+                                    <th class="px-4 py-2 text-left">Total</th>
+                                    <th class="px-4 py-2 text-left">Deuda</th>
+                                    <th class="px-4 py-2 text-left">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${salesHtml.length > 0 ? salesHtml : '<tr><td colspan="4" class="text-center py-4">No hay ventas registradas.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                 `;
+                 this.showModal('Historial del Cliente', content, null);
+            },
+
+            // Settings
+            updateSettingsUI() {
+                
+                document.getElementById('reset-password-btn').addEventListener('click', () => {
+                    const content = document.createElement('div');
+                    content.innerHTML = `
+                        <p class="mb-2">Para restablecer la contraseña a <b>1234</b>, ingresa el <b>código de recuperación</b>.</p>
+                        <input type="text" id="recovery-code-input" class="w-full px-3 py-2 border rounded-md" placeholder="Código de recuperación">
+                        <p class="mt-2 text-sm text-gray-600">Código por defecto: <code>FENIXRESET</code> (puedes cambiarlo en el código).</p>
+                    `;
+                    this.showModal('Restablecer contraseña', content, () => {
+                        const code = (document.getElementById('recovery-code-input').value || '').trim();
+                        if (code === (this.data.recoveryCode || 'FENIXRESET')) {
+                            this.data.adminPassword = '1234';
+                            this.saveData('adminPassword', this.data.adminPassword);
+                            this.toast('Contraseña restablecida a 1234', 'success');
+                        } else {
+                            this.toast('Código de recuperación incorrecto', 'error');
+                        }
+                    });
+                });
+document.querySelectorAll('[data-lock]').forEach(cb => {
+                    const sectionId = cb.dataset.lock;
+                    cb.checked = this.data.lockedSections.includes(sectionId);
+                });
+            },
+
+            // Event Binding
+            bindEventListeners() {
+                // Navigation
+                document.querySelectorAll('#sidebar button').forEach(button => {
+                    button.addEventListener('click', (e) => this.showSection(e.currentTarget.dataset.section));
+                });
+                // Close modal button
+                document.getElementById('close-modal-btn').addEventListener('click', () => this.closeModal());
+                // Mobile menu
+                document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.remove('hidden');
+                });
+                document.getElementById('close-mobile-menu').addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.add('hidden');
+                });
+                // Option modal close
+                document.getElementById('close-option-modal-btn').addEventListener('click', () => this.closeOptionModal());
+                // Sales Form
+                document.getElementById('sale-product').addEventListener('click', () => {
+                    if (document.getElementById('sale-product').disabled) return;
+                    const options = this.data.productos.map((p, i) => ({value: i, display: p.nombre}));
+                    this.showOptionModal('Seleccionar Producto', options, (value, display) => {
+                        document.getElementById('sale-product').value = display;
+                        document.getElementById('sale-product').dataset.index = value;
+                        document.getElementById('sale-size').disabled = false;
+                        document.getElementById('sale-size').value = '';
+                        const product = this.data.productos[value];
+                        if (product.sabores.length > 0) {
+                            document.getElementById('sale-flavor').disabled = false;
+                            document.getElementById('sale-flavor').value = '';
+                        } else {
+                            document.getElementById('sale-flavor').disabled = true;
+                            document.getElementById('sale-flavor').value = 'No hay sabores';
+                        }
+                        if (product.tamanos.length > 0) {
+                            document.getElementById('sale-price').value = product.tamanos[0].precio;
+                        } else {
+                            document.getElementById('sale-price').value = '';
+                        }
+                    });
+                });
+                document.getElementById('sale-size').addEventListener('click', () => {
+                    const input = document.getElementById('sale-size');
+                    if (input.disabled) return;
+                    const productIndex = parseInt(document.getElementById('sale-product').dataset.index);
+                    if (isNaN(productIndex)) {
+                        this.toast('Selecciona un producto primero.', 'error');
+                        return;
+                    }
+                    const product = this.data.productos[productIndex];
+                    const options = product.tamanos.map((s, j) => ({value: j, display: `${s.nombre} (${this.formatCurrency(s.precio)})`}));
+                    this.showOptionModal('Seleccionar Tamaño', options, (value, display) => {
+                        input.value = display;
+                        input.dataset.index = value;
+                        document.getElementById('sale-price').value = product.tamanos[value].precio;
+                    });
+                });
+                document.getElementById('sale-flavor').addEventListener('click', () => {
+                    const input = document.getElementById('sale-flavor');
+                    if (input.disabled) return;
+                    const productIndex = parseInt(document.getElementById('sale-product').dataset.index);
+                    if (isNaN(productIndex)) {
+                        this.toast('Selecciona un producto primero.', 'error');
+                        return;
+                    }
+                    const product = this.data.productos[productIndex];
+                    const options = product.sabores.map(s => ({value: s, display: s}));
+                    this.showOptionModal('Seleccionar Sabor', options, (value, display) => {
+                        input.value = display;
+                    });
+                });
+                document.getElementById('sale-special-price-toggle').addEventListener('change', (e) => {
+                    const priceInput = document.getElementById('sale-price');
+                    priceInput.disabled = !e.target.checked;
+                    priceInput.classList.toggle('bg-gray-100', !e.target.checked);
+                    priceInput.classList.toggle('cursor-not-allowed', !e.target.checked);
+                });
+                document.getElementById('sale-quantity-minus').addEventListener('click', () => {
+                    const input = document.getElementById('sale-quantity');
+                    if (input.value > 1) input.value--;
+                });
+                document.getElementById('sale-quantity-plus').addEventListener('click', () => document.getElementById('sale-quantity').value++);
+                document.getElementById('sale-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const productIndex = parseInt(document.getElementById('sale-product').dataset.index);
+                    if (isNaN(productIndex)) {
+                        this.toast('Selecciona un producto válido.', 'error');
+                        return;
+                    }
+                    const sizeIndex = parseInt(document.getElementById('sale-size').dataset.index);
+                    if (isNaN(sizeIndex)) {
+                        this.toast('Selecciona un tamaño válido.', 'error');
+                        return;
+                    }
+                    let flavor = document.getElementById('sale-flavor').value;
+                    if (flavor === 'No hay sabores' || flavor === '') flavor = null;
+                    const item = {
+                        producto: this.data.productos[productIndex].nombre,
+                        tamano: this.data.productos[productIndex].tamanos[sizeIndex].nombre,
+                        sabor: flavor,
+                        cantidad: parseInt(document.getElementById('sale-quantity').value),
+                        precio: parseFloat(document.getElementById('sale-price').value)
+                    };
+                    this.currentItems.sales.push(item);
+                    this.saveData('currentItems', this.currentItems);
+                    this.renderSaleItems();
+                });
+                document.getElementById('sale-reset-btn').addEventListener('click', () => this.resetSaleForm());
+                document.getElementById('sale-save-btn').addEventListener('click', () => {
+                    document.getElementById('sale-save-btn').disabled = true;
+                    this.saveSale();
+                });
+                document.getElementById('sale-client').addEventListener('click', () => this.showClientSelectionModal('sale-client'));
+
+                // Order Form
+                document.getElementById('order-product').addEventListener('click', () => {
+                    if (document.getElementById('order-product').disabled) return;
+                    const options = this.data.productos.map((p, i) => ({value: i, display: p.nombre}));
+                    this.showOptionModal('Seleccionar Producto', options, (value, display) => {
+                        document.getElementById('order-product').value = display;
+                        document.getElementById('order-product').dataset.index = value;
+                        document.getElementById('order-size').disabled = false;
+                        document.getElementById('order-size').value = '';
+                        const product = this.data.productos[value];
+                        if (product.sabores.length > 0) {
+                            document.getElementById('order-flavor').disabled = false;
+                            document.getElementById('order-flavor').value = '';
+                        } else {
+                            document.getElementById('order-flavor').disabled = true;
+                            document.getElementById('order-flavor').value = 'No hay sabores';
+                        }
+                        if (product.tamanos.length > 0) {
+                            document.getElementById('order-price').value = product.tamanos[0].precio;
+                        } else {
+                            document.getElementById('order-price').value = '';
+                        }
+                    });
+                });
+                document.getElementById('order-size').addEventListener('click', () => {
+                    const input = document.getElementById('order-size');
+                    if (input.disabled) return;
+                    const productIndex = parseInt(document.getElementById('order-product').dataset.index);
+                    if (isNaN(productIndex)) {
+                        this.toast('Selecciona un producto primero.', 'error');
+                        return;
+                    }
+                    const product = this.data.productos[productIndex];
+                    const options = product.tamanos.map((s, j) => ({value: j, display: `${s.nombre} (${this.formatCurrency(s.precio)})`}));
+                    this.showOptionModal('Seleccionar Tamaño', options, (value, display) => {
+                        input.value = display;
+                        input.dataset.index = value;
+                        document.getElementById('order-price').value = product.tamanos[value].precio;
+                    });
+                });
+                document.getElementById('order-flavor').addEventListener('click', () => {
+                    const input = document.getElementById('order-flavor');
+                    if (input.disabled) return;
+                    const productIndex = parseInt(document.getElementById('order-product').dataset.index);
+                    if (isNaN(productIndex)) {
+                        this.toast('Selecciona un producto primero.', 'error');
+                        return;
+                    }
+                    const product = this.data.productos[productIndex];
+                    const options = product.sabores.map(s => ({value: s, display: s}));
+                    this.showOptionModal('Seleccionar Sabor', options, (value, display) => {
+                        input.value = display;
+                    });
+                });
+                document.getElementById('order-special-price-toggle').addEventListener('change', (e) => {
+                    const priceInput = document.getElementById('order-price');
+                    priceInput.disabled = !e.target.checked;
+                    priceInput.classList.toggle('bg-gray-100', !e.target.checked);
+                    priceInput.classList.toggle('cursor-not-allowed', !e.target.checked);
+                });
+                document.getElementById('order-quantity-minus').addEventListener('click', () => {
+                    const input = document.getElementById('order-quantity');
+                    if (input.value > 1) input.value--;
+                });
+                document.getElementById('order-quantity-plus').addEventListener('click', () => document.getElementById('order-quantity').value++);
+                document.getElementById('order-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const productIndex = parseInt(document.getElementById('order-product').dataset.index);
+                    if (isNaN(productIndex)) {
+                        this.toast('Selecciona un producto válido.', 'error');
+                        return;
+                    }
+                    const sizeIndex = parseInt(document.getElementById('order-size').dataset.index);
+                    if (isNaN(sizeIndex)) {
+                        this.toast('Selecciona un tamaño válido.', 'error');
+                        return;
+                    }
+                    let flavor = document.getElementById('order-flavor').value;
+                    if (flavor === 'No hay sabores' || flavor === '') flavor = null;
+                    const item = {
+                        producto: this.data.productos[productIndex].nombre,
+                        tamano: this.data.productos[productIndex].tamanos[sizeIndex].nombre,
+                        sabor: flavor,
+                        cantidad: parseInt(document.getElementById('order-quantity').value),
+                        precio: parseFloat(document.getElementById('order-price').value)
+                    };
+                    this.currentItems.orders.push(item);
+                    this.saveData('currentItems', this.currentItems);
+                    this.renderOrderItems();
+                });
+                document.getElementById('order-reset-btn').addEventListener('click', () => this.resetOrderForm());
+                document.getElementById('order-save-btn').addEventListener('click', () => {
+                    document.getElementById('order-save-btn').disabled = true;
+                    this.saveOrder();
+                });
+                document.getElementById('order-client').addEventListener('click', () => this.showClientSelectionModal('order-client'));
+
+                // Client Selection Modal
+                document.getElementById('close-client-modal-btn').addEventListener('click', () => this.closeClientSelectionModal());
+                document.getElementById('client-search-modal').addEventListener('input', (e) => this.renderClientListModal(e.target.value));
+
+                // History Filters
+                document.getElementById('history-sales-start-date').addEventListener('change', () => this.renderSalesHistory());
+                document.getElementById('history-sales-end-date').addEventListener('change', () => this.renderSalesHistory());
+                document.getElementById('history-sales-client').addEventListener('input', () => this.renderSalesHistory());
+                document.getElementById('history-sales-status').addEventListener('change', () => this.renderSalesHistory());
+                
+                document.getElementById('history-orders-start-date').addEventListener('change', () => this.renderOrdersHistory());
+                document.getElementById('history-orders-end-date').addEventListener('change', () => this.renderOrdersHistory());
+                document.getElementById('history-orders-client').addEventListener('input', () => this.renderOrdersHistory());
+                document.getElementById('history-orders-delivery-status').addEventListener('change', () => this.renderOrdersHistory());
+
+                // Products
+                document.getElementById('product-search').addEventListener('input', () => this.renderProductsTable());
+                document.getElementById('add-product-btn').addEventListener('click', () => this.showProductModal());
+                document.getElementById('export-products-btn').addEventListener('click', () => this.exportToCSV('productos'));
+                document.getElementById('import-products-btn').addEventListener('click', () => this.importFromFile('productos'));
+                
+                // Clients
+                document.getElementById('client-search').addEventListener('input', () => this.renderClientsTable());
+                document.getElementById('add-client-btn').addEventListener('click', () => this.showClientModal());
+                document.getElementById('export-clients-btn').addEventListener('click', () => this.exportToCSV('clientes'));
+                document.getElementById('import-clients-btn').addEventListener('click', () => this.importFromFile('clientes'));
+
+                // Dashboard
+                document.getElementById('generate-analysis-btn').addEventListener('click', () => this.generateAnalysis());
+                document.getElementById('close-analysis-btn').addEventListener('click', () => document.getElementById('analysis-results').classList.add('hidden'));
+                document.getElementById('preview-export-btn').addEventListener('click', () => this.previewExport());
+                document.getElementById('export-txt-btn').addEventListener('click', () => this.exportAsText());
+                document.getElementById('export-csv-btn').addEventListener('click', () => this.exportToCSV('ventas'));
+                document.getElementById('export-xlsx-btn').addEventListener('click', () => this.exportToXLSX());
+                document.getElementById('export-pdf-btn').addEventListener('click', () => this.exportToPDF());
+                
+                // Settings
+                document.getElementById('change-password-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const currentPass = document.getElementById('current-password').value;
+                    const newPass = document.getElementById('new-password').value;
+                    const confirmPass = document.getElementById('confirm-password').value;
+                    if (currentPass !== this.data.adminPassword) {
+                        this.toast('Contraseña actual incorrecta.', 'error');
+                        return;
+                    }
+                    if (newPass !== confirmPass) {
+                        this.toast('Las nuevas contraseñas no coinciden.', 'error');
+                        return;
+                    }
+                    this.data.adminPassword = newPass;
+                    this.saveData('adminPassword', this.data.adminPassword);
+                    this.toast('Contraseña cambiada exitosamente.', 'success');
+                    document.getElementById('change-password-form').reset();
+                });
+                document.querySelectorAll('[data-lock]').forEach(cb => {
+                    cb.addEventListener('change', (e) => {
+                        const sectionId = e.target.dataset.lock;
+                        if (e.target.checked && !this.data.lockedSections.includes(sectionId)) {
+                            this.data.lockedSections.push(sectionId);
+                        } else {
+                            this.data.lockedSections = this.data.lockedSections.filter(s => s !== sectionId);
+                        }
+                        this.saveData('lockedSections', this.data.lockedSections);
+                    });
+                });
+                document.getElementById('export-backup-btn').addEventListener('click', () => this.exportBackup());
+                document.getElementById('import-backup-btn').addEventListener('click', () => this.importBackup());
+            },
+
+            // Other Utilities
+            generateAnalysis() {
+                 const analysisDiv = document.getElementById('analysis-results');
+                 analysisDiv.classList.remove('hidden');
+
+                 const totalSales = this.data.ventas.reduce((sum, v) => sum + v.total, 0);
+                 const pendingDebt = this.data.ventas.reduce((sum, v) => sum + v.debt, 0);
+                 const averageTicket = this.data.ventas.length > 0 ? totalSales / this.data.ventas.length : 0;
+
+                 const productCounts = {};
+                 this.data.ventas.forEach(v => {
+                     v.items.forEach(item => {
+                         productCounts[item.producto] = (productCounts[item.producto] || 0) + item.cantidad;
+                     });
+                 });
+                 const topProduct = Object.keys(productCounts).length > 0 ? Object.keys(productCounts).reduce((a, b) => productCounts[a] > productCounts[b] ? a : b) : 'N/A';
+
+                 const clientSales = {};
+                 this.data.ventas.forEach(v => {
+                     if (v.clienteId !== null) {
+                         const clientName = this.data.clientes[v.clienteId].nombre;
+                         clientSales[clientName] = (clientSales[clientName] || 0) + v.total;
+                     }
+                 });
+                 const topClient = Object.keys(clientSales).length > 0 ? Object.keys(clientSales).reduce((a, b) => clientSales[a] > clientSales[b] ? a : b) : 'N/A';
+
+                 document.getElementById('analysis-total-sales').textContent = this.formatCurrency(totalSales);
+                 document.getElementById('analysis-pending-sales').textContent = this.formatCurrency(pendingDebt);
+                 document.getElementById('analysis-average-ticket').textContent = this.formatCurrency(averageTicket);
+                 document.getElementById('analysis-top-product').textContent = topProduct;
+                 document.getElementById('analysis-top-client').textContent = topClient;
+            },
+            getFilteredSalesForExport() {
+                const startDate = document.getElementById('export-start-date').value;
+                const endDate = document.getElementById('export-end-date').value;
+                return this.data.ventas.filter(v => {
+                    const saleDate = new Date(v.fecha).toISOString().split('T')[0];
+                    return (!startDate || saleDate >= startDate) && (!endDate || saleDate <= endDate);
+                });
+            },
+            previewExport() {
+                const filteredSales = this.getFilteredSalesForExport();
+                if (filteredSales.length === 0) {
+                    this.toast('No hay datos para previsualizar.', 'error');
+                    return;
+                }
+
+                const table = document.createElement('table');
+                table.className = 'min-w-full divide-y divide-gray-200';
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 text-left">Fecha</th>
+                            <th class="px-4 py-2 text-left">Cliente</th>
+                            <th class="px-4 py-2 text-left">Total</th>
+                            <th class="px-4 py-2 text-left">Pagado</th>
+                            <th class="px-4 py-2 text-left">Deuda</th>
+                            <th class="px-4 py-2 text-left">Notas</th>
+                            <th class="px-4 py-2 text-left">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredSales.map(v => {
+                            const clientName = v.clienteId !== null ? this.data.clientes[v.clienteId].nombre : 'N/A';
+                            return `
+                                <tr>
+                                    <td class="px-4 py-2">${new Date(v.fecha).toLocaleDateString()}</td>
+                                    <td class="px-4 py-2">${clientName}</td>
+                                    <td class="px-4 py-2">${this.formatCurrency(v.total)}</td>
+                                    <td class="px-4 py-2">${this.formatCurrency(v.amountPaid)}</td>
+                                    <td class="px-4 py-2">${this.formatCurrency(v.debt)}</td>
+                                    <td class="px-4 py-2">${v.notas}</td>
+                                    <td class="px-4 py-2">${v.status === 'paid' ? 'Pagado' : 'Pendiente'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                `;
+
+                const content = document.createElement('div');
+                content.className = 'overflow-x-auto';
+                content.appendChild(table);
+
+                this.showModal('Previsualización de Exportación', content, null, false); // No cancel button, only close
+            },
+            exportAsText() {
+                const filteredSales = this.getFilteredSalesForExport();
+                if (filteredSales.length === 0) {
+                    this.toast('No hay datos para exportar.', 'error');
+                    return;
+                }
+                let txt = 'Historial de Ventas\n\n';
+                filteredSales.forEach(v => {
+                    const clientName = v.clienteId !== null ? this.data.clientes[v.clienteId].nombre : 'N/A';
+                    txt += `Fecha: ${new Date(v.fecha).toLocaleDateString()}\n`;
+                    txt += `Cliente: ${clientName}\n`;
+                    txt += `Total: ${this.formatCurrency(v.total)}\n`;
+                    txt += `Pagado: ${this.formatCurrency(v.amountPaid)}\n`;
+                    txt += `Deuda: ${this.formatCurrency(v.debt)}\n`;
+                    txt += `Notas: ${v.notas}\n`;
+                    txt += `Estado: ${v.status === 'paid' ? 'Pagado' : 'Pendiente'}\n\n`;
+                });
+                const blob = new Blob([txt], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'ventas.txt';
+                link.click();
+                this.toast('Exportado como TXT.', 'success');
+            },
+            exportToCSV(type) {
+                let data;
+                let fileName;
+                if (type === 'ventas') {
+                    data = this.getFilteredSalesForExport();
+                    fileName = 'ventas.csv';
+                } else {
+                    data = this.data[type];
+                    fileName = `${type}.csv`;
+                }
+                if (data.length === 0) {
+                    this.toast('No hay datos para exportar.', 'error');
+                    return;
+                }
+                let csv = '';
+                
+                if (type === 'productos') {
+                    const headers = ['Nombre', 'Tamaños', 'Sabores'];
+                    csv = headers.join(',') + '\n';
+                    data.forEach(p => {
+                        const sizes = p.tamanos.map(s => `${s.nombre}|${s.precio}`).join(';');
+                        const flavors = p.sabores.join(';');
+                        csv += `"${p.nombre}","${sizes}","${flavors}"\n`;
+                    });
+                } else if (type === 'clientes') {
+                    const headers = ['Nombre', 'Teléfono', 'Ubicación', 'Notas'];
+                    csv = headers.join(',') + '\n';
+                    data.forEach(c => {
+                        csv += `"${c.nombre}","${c.telefono}","${c.ubicacion}","${c.notas}"\n`;
+                    });
+                } else if (type === 'ventas') {
+                    const headers = ['Fecha', 'Cliente', 'Total', 'Pagado', 'Deuda', 'Notas', 'Estado', 'Items'];
+                    csv = headers.join(',') + '\n';
+                    data.forEach(v => {
+                        const clientName = v.clienteId !== null ? this.data.clientes[v.clienteId].nombre : 'N/A';
+                        const items = v.items.map(item => `${item.cantidad}x${item.producto}(${item.tamano})`).join(';');
+                        csv += `"${new Date(v.fecha).toISOString()}","${clientName}",${v.total},${v.amountPaid},${v.debt},"${v.notas}","${v.status}","${items}"\n`;
+                    });
+                }
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                this.toast('Datos exportados a CSV.', 'success');
+            },
+            exportToXLSX() {
+                const filteredSales = this.getFilteredSalesForExport();
+                if (filteredSales.length === 0) {
+                    this.toast('No hay datos para exportar.', 'error');
+                    return;
+                }
+                const data = filteredSales.map(v => {
+                    const clientName = v.clienteId !== null ? this.data.clientes[v.clienteId].nombre : 'N/A';
+                    return {
+                        Fecha: new Date(v.fecha).toLocaleDateString(),
+                        Cliente: clientName,
+                        Total: v.total,
+                        Pagado: v.amountPaid,
+                        Deuda: v.debt,
+                        Notas: v.notas,
+                        Estado: v.status === 'paid' ? 'Pagado' : 'Pendiente',
+                        Items: v.items.map(item => `${item.cantidad}x ${item.producto} (${item.tamano})`).join('; ')
+                    };
+                });
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+                XLSX.writeFile(wb, 'ventas.xlsx');
+                this.toast('Exportado como XLSX.', 'success');
+            },
+            exportToPDF() {
+                const filteredSales = this.getFilteredSalesForExport();
+                if (filteredSales.length === 0) {
+                    this.toast('No hay datos para exportar.', 'error');
+                    return;
+                }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(12);
+                doc.text('Historial de Ventas', 10, 10);
+                let y = 20;
+                filteredSales.forEach(v => {
+                    const clientName = v.clienteId !== null ? this.data.clientes[v.clienteId].nombre : 'N/A';
+                    doc.text(`Fecha: ${new Date(v.fecha).toLocaleDateString()}`, 10, y);
+                    y += 10;
+                    doc.text(`Cliente: ${clientName}`, 10, y);
+                    y += 10;
+                    doc.text(`Total: ${this.formatCurrency(v.total)}`, 10, y);
+                    y += 10;
+                    doc.text(`Pagado: ${this.formatCurrency(v.amountPaid)}`, 10, y);
+                    y += 10;
+                    doc.text(`Deuda: ${this.formatCurrency(v.debt)}`, 10, y);
+                    y += 10;
+                    doc.text(`Notas: ${v.notas}`, 10, y);
+                    y += 10;
+                    doc.text(`Estado: ${v.status === 'paid' ? 'Pagado' : 'Pendiente'}`, 10, y);
+                    y += 15;
+                });
+                doc.save('ventas.pdf');
+                this.toast('Exportado como PDF.', 'success');
+            },
+            importFromFile(type) {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.csv, .txt, .json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = event.target.result;
+                            if (file.name.endsWith('.json')) {
+                                const parsedData = JSON.parse(data);
+                                this.data[type] = parsedData;
+                                this.saveData(type, this.data[type]);
+                            } else {
+                                // Simple CSV parser
+                                const rows = data.split('\n').slice(1);
+                                const newData = [];
+                                rows.forEach(row => {
+                                    const cols = row.split(',').map(c => c.replace(/^"|"$/g, ''));
+                                    if (cols.length > 1) {
+                                        if (type === 'productos') {
+                                            const sizes = cols[1].split(';').map(s => {
+                                                const [name, price] = s.split('|');
+                                                return { nombre: name, precio: parseFloat(price) };
+                                            });
+                                            const flavors = cols[2].split(';');
+                                            newData.push({ nombre: cols[0], tamanos: sizes, sabores: flavors });
+                                        } else if (type === 'clientes') {
+                                            newData.push({ nombre: cols[0], telefono: cols[1], ubicacion: cols[2], notas: cols[3] });
+                                        }
+                                    }
+                                });
+                                this.data[type] = newData;
+                                this.saveData(type, this.data[type]);
+                            }
+                            this.toast('Datos importados correctamente.', 'success');
+                            this.renderAll();
+                        } catch (err) {
+                            this.toast('Error al importar el archivo.', 'error');
+                            console.error(err);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            },
+            exportBackup() {
+                const backup = JSON.stringify(this.data, null, 2);
+                const blob = new Blob([backup], { type: 'application/json' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `alemi-backup-${new Date().toISOString().split('T')[0]}.json`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                this.toast('Copia de seguridad exportada.', 'success');
+            },
+            importBackup() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const backup = JSON.parse(event.target.result);
+                            for (const key in backup) {
+                                localStorage.setItem(key, JSON.stringify(backup[key]));
+                            }
+                            this.loadData(); // Reload all data from localStorage
+                            this.toast('Copia de seguridad importada. Recargando la aplicación...', 'success');
+                            setTimeout(() => location.reload(), 1500);
+                        } catch (err) {
+                            this.toast('Error al importar la copia de seguridad. Archivo no válido.', 'error');
+                            console.error(err);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            }
+        };
+
+        window.onload = () => app.init();
+    </script>
+</body>
+</html>
