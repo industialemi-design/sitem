@@ -71,6 +71,7 @@
                     <li><button class="w-full text-left px-4 py-2 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-200" data-section="settings"><i class="fas fa-cogs mr-3"></i>Configuración</button></li>
                 </ul>
             </nav>
+            <button id="fullscreen-btn" class="mt-auto mb-4 text-white hover:text-gray-200"><i class="fas fa-expand text-2xl"></i></button>
         </aside>
 
         <!-- Contenido Principal -->
@@ -1775,6 +1776,23 @@ document.querySelectorAll('[data-lock]').forEach(cb => {
                 });
                 document.getElementById('export-backup-btn').addEventListener('click', () => this.exportBackup());
                 document.getElementById('import-backup-btn').addEventListener('click', () => this.importBackup());
+
+                // Fullscreen toggle
+                document.getElementById('fullscreen-btn').addEventListener('click', () => {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(console.error);
+                    } else {
+                        document.exitFullscreen().catch(console.error);
+                    }
+                });
+                document.addEventListener('fullscreenchange', () => {
+                    const icon = document.querySelector('#fullscreen-btn i');
+                    if (document.fullscreenElement) {
+                        icon.classList.replace('fa-expand', 'fa-compress');
+                    } else {
+                        icon.classList.replace('fa-compress', 'fa-expand');
+                    }
+                });
             },
 
             // Other Utilities
